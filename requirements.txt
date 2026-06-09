@@ -1,0 +1,25 @@
+# Dependencies for the Gemma 2 9B feature-discovery pipeline.
+#
+# IMPORTANT: these are intentionally UNPINNED. transformer_lens, sae_lens, and
+# transformers change APIs frequently and the GemmaScope SAE loading is sensitive
+# to versions. Before publishing, replace these with the EXACT versions you used,
+# captured from the environment that produced the paper's results:
+#
+#     pip freeze | grep -iE 'transformer.lens|sae.lens|^torch|transformers|accelerate|numpy|pandas|scipy|scikit-learn|matplotlib|seaborn|statsmodels|tqdm|huggingface' > requirements.txt
+#
+# Then commit the pinned file. Unpinned, this repo may silently stop reproducing.
+
+transformer_lens
+sae_lens
+torch
+transformers
+accelerate
+huggingface_hub
+numpy
+pandas
+scipy
+scikit-learn
+statsmodels
+matplotlib
+seaborn
+tqdm
