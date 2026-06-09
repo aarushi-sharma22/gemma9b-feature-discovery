@@ -17,13 +17,11 @@ code/
   gemma-9b-full-pipeline.ipynb   # end-to-end pipeline (Colab-ready)
   sequence_level_scoring.py      # scoring-method validation (Appendix D.2)
 data/
-  feature_stats-gemma.csv        # per-feature selection statistics (derived)
-  behavioral_effects-gemma.csv   # behavioural effects per demographic x domain x layer (derived)
-  validation_results-gemma.csv   # causal validation results (derived)
+  feature_stats-gemma.csv        # per-feature selection statistics (derived, aggregate)
+  behavioral_effects-gemma.csv   # behavioural effects per demographic x domain x layer (derived, aggregate)
   codebook                       # ESS variable codebook (JSON)
-  stratified_sample_template.csv # HEADER ONLY - see "Data" below
 requirements.txt
-LICENSE                          # TODO: add a license (see below)
+LICENSE                          # MIT (covers this repo's code)
 ```
 
 ## Pipeline stages (notebook cell order)
@@ -41,31 +39,26 @@ LICENSE                          # TODO: add a license (see below)
 
 `sequence_level_scoring.py` runs separately, after the causal-validation cell, and reproduces the scoring-method sensitivity analysis in Appendix D.2 (it depends on objects defined in that cell: `model`, `tokenizer`, `sae_manager`, `prompts_df`, `compute_ev`, `build_pairs`, etc.).
 
-## Setup
-
-**Colab (recommended; the notebook is written for it):** open the badge link at the top of the notebook. You need a GPU runtime and a Hugging Face token with access to gated Gemma.
-
-**Local:**
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-```
-Requires a CUDA GPU with enough memory for Gemma 2 9B. Set your Hugging Face token in the auth cell (or via `HF_TOKEN`); never commit a real token.
-
 ## Data
 
-The **derived** outputs needed to reproduce the figures and statistics are included in `data/` (`*-gemma.csv`).
+**Included (aggregate derived outputs, no respondent identifiers):** `feature_stats-gemma.csv` (per-feature selection statistics by demographic x domain) and `behavioral_effects-gemma.csv` (behavioural effects by demographic x domain x layer). These are sufficient to reproduce the corresponding figures and summary statistics.
 
-The **raw respondent data is NOT included.** It comes from the European Social Survey CRONOS-3 panel, Wave 4 (ESS ERIC, 2026), a cross-national self-completion panel fielded in 2024-2025 across 11 European countries. The data is governed by ESS terms of use, which (to our reading) do not permit redistribution; obtain it directly from ESS. The analysis uses respondent demographic variables and question text only, not respondent-level response data. Experiments used edition 1.0; edition 1.1 (Feb 2026) corrected a reversed scale coding for `w4eq1`, which does not affect this analysis.
+**Not included:**
+- *Raw respondent data.* It comes from the European Social Survey CRONOS-3 panel, Wave 4 (ESS ERIC, 2026), fielded 2024-2025 across 11 European countries. Obtain it directly from ESS (see below).
+- *Per-pair causal-validation results.* The per-pair output file embedded respondent IDs in its key, so it is omitted; regenerate it by running the causal-validation cell of the notebook on the reconstructed sample.
 
-To reconstruct the input sample:
+### ESS licensing
 
-1. Register and download CRONOS-3 Wave 4 from the ESS Data Portal: https://www.europeansocialsurvey.org/ (DOI for edition 1.1: https://doi.org/10.21338/cron3w4e01_1).
-2. Select 150 respondents with complete demographic information across all five attributes (`gndr`, `age`, `eisced`, `hincfel`, `vote`), partitioned into 120 for feature selection and 30 for held-out validation. The exact respondent IDs used are recoverable from the `pair_key` column of `validation_results-gemma.csv` (format: `<idno>_<question>_<demographic>`), so you can match the precise sample rather than re-deriving it.
-3. Take the variable columns listed in `data/stratified_sample_template.csv` (`idno, cntry, age, gndr, hincfel, vote, eisced` plus the survey items). The survey-answer columns are left blank in the template because the model fills them in.
-4. We use extreme demographic contrasts for feature discovery: income (wealthy vs. poor), age (75 vs. 22), gender (man vs. woman), education (PhD vs. no secondary), and vote (regular vs. non-voter). Non-tested attributes use each respondent's real ESS values rendered as natural language. This yields 66,000 contrastive pairs for selection and 16,500 for validation across 110 questions in five domains.
+ESS data is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0) and is available without restriction for not-for-profit purposes; ESS documentation is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0). The licence permits non-commercial redistribution with attribution and share-alike, but ESS **recommends** linking to the ESS Data Portal rather than hosting datasets externally, and we follow that recommendation: the raw panel is not redistributed here. The aggregate statistics we do include are derived from, and should be cited as adapted from, the dataset below.
 
-If you determine the ESS license permits redistribution of this subsample, you may include the populated file instead; verify the terms first.
+### Reconstructing the input sample
+
+1. Register and download CRONOS-3 Wave 4 from the ESS Data Portal: https://www.europeansocialsurvey.org/ (edition 1.1 DOI: https://doi.org/10.21338/cron3w4e01_1). Experiments used edition 1.0; edition 1.1 (Feb 2026) corrected a reversed scale coding for `w4eq1`, which does not affect this analysis (it uses demographic variables and question text only, not respondent-level responses).
+2. Select 150 respondents with complete demographic information across all five attributes (`gndr`, `age`, `eisced`, `hincfel`, `vote`), partitioned into 120 for feature selection and 30 for held-out validation. The exact respondent set depends on the stratified draw; the per-respondent ID list is not redistributed here, so the precise sample is reproducible only up to the selection criteria.
+3. Use the columns `idno, cntry, age, gndr, hincfel, vote, eisced` plus the survey items, with the survey-answer columns left blank (the model fills them in).
+4. Demographic contrasts (extreme values, for feature discovery): income (wealthy vs. poor), age (75 vs. 22), gender (man vs. woman), education (PhD vs. no secondary), vote (regular vs. non-voter). Non-tested attributes use each respondent's real ESS values rendered as natural language. This yields 66,000 contrastive pairs for selection and 16,500 for validation across 110 questions in five domains.
+
+Please cite the ESS data per their requirements: European Social Survey European Research Infrastructure (ESS ERIC) (2026) CRONOS3 Wave 4 [Data set]. Sikt. https://doi.org/10.21338/cron3w4e01_1.
 
 ## Citing
 
@@ -78,8 +71,11 @@ If you determine the ESS license permits redistribution of this subsample, you m
   url     = {https://openreview.net/forum?id=TQbXHsI3Lm}
 }
 ```
-<!-- Confirm the year matches the official TMLR publication date before release. -->
+
 
 ## License
 
-<!-- TODO: add a LICENSE file. MIT is the simplest permissive choice for research code (Apache-2.0 if you want an explicit patent grant). Confirm with St Andrews / your funder that you are cleared to open-source PhD code before committing. The ESS data terms govern the data regardless of the code license. -->
+The code in this repository is released under the MIT License (see `LICENSE`).
+
+The data is governed separately: ESS CRONOS-3 Wave 4 is CC BY-NC-SA 4.0 and ESS documentation is CC BY-SA 4.0; the aggregate ESS-derived statistics in `data/` carry those terms and the citation above, regardless of the MIT license on the code.
+
